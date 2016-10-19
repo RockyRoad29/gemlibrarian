@@ -8,5 +8,10 @@
   },
   "keywords": [],
   "author": "rockyroad <rocky.road@rocky-shore.net>",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "console.table": "^0.7.0",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {}
 }

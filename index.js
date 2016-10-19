@@ -104,7 +104,13 @@ function append_GH_infos(row) {
           }
           // console.log(row);
           return resolve(row);
-        }).catch(reject);
+        }).catch(function(reason){
+          console.log("Error retrieving %s: %s", repo, reason.error);
+          if (reason.response) {
+            console.log(reason.response.statusCode, reason.response.statusMessage);
+          }
+          return resolve(row);
+        });
       } else {
         return resolve(row);
       }
@@ -121,7 +127,7 @@ function search_plus(query) {
     // Convert json text to js object
     return JSON.parse(body);
   }).then(function(infos) {
-    console.log(`${infos.length} gems found.`);
+    console.log(`${infos.length} gems found.\n`);
     // Add some details from github
     return Promise.all(
       infos.map(function(row){
@@ -141,10 +147,22 @@ function search_plus(query) {
     });
   }).then(function(infos) {
     // layout results as text table
+    console.log(""); // newline
     console.table(infos);
   });
 }
 
-// search_plus('devise-i18n');
-search_plus('i18n')
-  .catch(console.error);
+// =======================================================================================================
+var parseArgs = require('minimist');
+// see node_modules/minimist/test/ for examples
+var argv = parseArgs(process.argv.slice(2), {
+  boolean: ['h', 'v']
+});
+if (argv.h || argv._.length<1) {
+  console.log("This program is on alpha stage");
+} else {
+  var query = argv._.join('+');
+  console.log("You asked about: %j", query);
+  search_plus(query)
+    .catch(console.error);
+}
