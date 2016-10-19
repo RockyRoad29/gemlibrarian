@@ -5,6 +5,7 @@ require('console.table');
 var _ = require('underscore');
 
 const GEMS_API =  "https://rubygems.org/api/v1/";
+const GH_API = "https://api.github.com/repos/request/request";
 const OPTIONS = {
   timeout: 1500,
   headers: {
@@ -69,6 +70,43 @@ function search(query) {
   });
 }
 
-show_gem('rails').then(function(){
-  search('devise-i18n');
-});
+// show_gem('rails').then(function(){
+//   search('devise-i18n');
+// });
+function append_GH_infos(row) {
+  // TODO
+  return row;
+}
+// console.log(info.stargazers_count + " Stars");
+// console.log(info.forks_count + " Forks");
+function search_plus(query) {
+  var options = Object.assign({}, OPTIONS);
+  options.url = GEMS_API + "search.json?query=" + query;
+  return p_request(options).then(function(body){
+    // Convert json text to js object
+    return JSON.parse(body);
+  }).then(function(infos) {
+    // Add some details from github
+    return infos.map(function(row){
+      return append_GH_infos(row);
+    });
+    return infos;
+  }).then(function(infos) {
+    // TODO Filter out some rows
+    return infos;
+  }).then(function(infos) {
+    // TODO Sort rows
+    return infos;
+  }).then(function(infos) {
+    // Keep only some properties
+    // console.log(Object.keys(info[0]));
+    return infos.map(function(row){
+      return _.pick(row, table_keys);
+    });
+  }).then(function(infos) {
+    // layout results as text table
+    console.table(infos);
+  });
+}
+
+search_plus('devise-i18n');
