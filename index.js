@@ -159,10 +159,21 @@ var argv = parseArgs(process.argv.slice(2), {
   boolean: ['h', 'v']
 });
 if (argv.h || argv._.length<1) {
-  console.log("This program is on alpha stage");
+  console.log("Usage:\n\n"
+              + "Search remote gems matching keywords:\n"
+              + "   gemlibrarian some key word\n"
+              + "\n"
+              + "or display details about a single gem:\n"
+              + "   gemlibrarian -v interesting_gem\n"
+             );
 } else {
-  var query = argv._.join('+');
-  console.log("You asked about: %j", query);
-  search_plus(query)
-    .catch(console.error);
+  if (argv.v) {
+    show_gem(argv._[0])
+      .catch(console.error);
+  } else {
+    var query = argv._.join('+');
+    console.log("You asked about: %j", query);
+    search_plus(query)
+      .catch(console.error);
+  }
 }
