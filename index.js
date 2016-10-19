@@ -5,10 +5,11 @@ require('console.table');
 var _ = require('underscore');
 
 const GEMS_API =  "https://rubygems.org/api/v1/";
-const GH_API = "https://api.github.com/repos/request/request";
+const GH_API = "https://api.github.com/repos/";
 const OPTIONS = {
-  timeout: 1500,
+  timeout: 2500,
   headers: {
+        'User-Agent': 'request' // necessary for GH_API
   }
 };
 
@@ -16,7 +17,7 @@ var table_keys = [ 'name'
   , 'downloads'
   , 'version'
   , 'version_downloads'
-  // , 'platform'
+  // , 'platform'a
   // , 'authors'
   // , 'info'
   // , 'licenses'
@@ -31,6 +32,12 @@ var table_keys = [ 'name'
   // , 'source_code_uri'
   // , 'bug_tracker_uri'
   // , 'dependencies'
+
+    // Github repo properties
+    , 'Stars'
+    , 'Forks'
+    , 'Updated'
+    , 'Size'
     ];
 
 function p_request(options) {
@@ -74,11 +81,39 @@ function search(query) {
 //   search('devise-i18n');
 // });
 function append_GH_infos(row) {
-  // TODO
-  return row;
+  return new Promise(function(resolve,reject) {
+    // Parse gh repo name
+    const r = /^https?:\/\/github.com\/(.*)/;
+    var uri = row.source_code_uri || row.home_page_uri;
+    // console.log(uri);
+    if (uri) {
+      var m = uri.match(r);
+      if (m) {
+        var repo = m[1];
+        console.log("Checking GH repo: %s", repo);
+        var options = Object.assign({}, OPTIONS);
+        options.url = GH_API + repo;
+        return p_request(options).then(function(body){
+          // Convert json text to js object
+          // console.log("GH answered for: %s", repo);
+          return JSON.parse(body);
+        }).then(function(infos) {
+          const wanted = { Stars: 'stargazers_count', Forks: 'forks_count', Updated: 'pushed_at', Size: 'size' };
+          for (var k in wanted) {
+            row[k] = infos[wanted[k]];
+          }
+          // console.log(row);
+          return resolve(row);
+        }).catch(reject);
+      } else {
+        return resolve(row);
+      }
+    } else {
+      return resolve(row);
+    }
+  });
 }
-// console.log(info.stargazers_count + " Stars");
-// console.log(info.forks_count + " Forks");
+
 function search_plus(query) {
   var options = Object.assign({}, OPTIONS);
   options.url = GEMS_API + "search.json?query=" + query;
@@ -86,11 +121,12 @@ function search_plus(query) {
     // Convert json text to js object
     return JSON.parse(body);
   }).then(function(infos) {
+    console.log(`${infos.length} gems found.`);
     // Add some details from github
-    return infos.map(function(row){
-      return append_GH_infos(row);
-    });
-    return infos;
+    return Promise.all(
+      infos.map(function(row){
+        return append_GH_infos(row);
+      }));
   }).then(function(infos) {
     // TODO Filter out some rows
     return infos;
@@ -109,4 +145,6 @@ function search_plus(query) {
   });
 }
 
-search_plus('devise-i18n');
+// search_plus('devise-i18n');
+search_plus('i18n')
+  .catch(console.error);
